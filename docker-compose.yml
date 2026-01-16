@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./app:/app
+      - ./uploads:/app/uploads
+      - ./results:/app/results
+      - ./pretrained_models/speechbrain:/root/.cache/torch/hub/speechbrain
+      - ./wav2vec2_checkpoint/models--microsoft--wavlm-large:/app/models--microsoft--wavlm-large
+    environment:
+      - HUGGINGFACE_ACCESS_TOKEN=${HUGGINGFACE_ACCESS_TOKEN}
+      - LLM_SERVICE_URL=http://llamacpp-api:8080/v1
+    depends_on:
+      - llamacpp-api
+
+  llamacpp-api:
+    image: ghcr.io/ggerganov/llama.cpp/server:latest
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./pretrained_models:/models
+    command: -m /models/your_model.gguf -c 4096 --host 0.0.0.0 --port 8080
